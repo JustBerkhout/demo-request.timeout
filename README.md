@@ -14,6 +14,12 @@ Make a copy of `myClient.config.template`, rename it to `myClient.config` and po
 
 To keep the tests reasonably simple I'm using Kafka CLI tools `kafka-topics`, `kafka-console-consumer` and `kafka-producer-perf-test`. I'm using a dedicated terminal for each, a `Control terminal` ,`Producer terminal` and a `Consumer terminal`
 
+The scripts in the `Consumer terminal` and in the `Control terminal` below expect the environment variable `BOOTSTRAP_SERVER` . Create it manually, or use something like this snippet to clip it from your `myClient.config`-file
+
+```
+export BOOTSTRAP_SERVER=$(grep bootstrap.server myClient.config | awk -F= '{print $2}')
+```
+
 Additionally I'll use `JConsole` to explore the producer JMX. This requires XForwarding. You can use a different way to explore the producer JMX if you like. Let me know if you have a suggestion for an elegant, minimal workflow**.
 
 ** One alternative is to run `kafka-producer-perf-test` with the `--print-metrics` argument. The big drawback is that you have to let it finish to see the metrics; the metrics won't show if you stop it using crtl-C. So you will have to choose a `--num-records` that is small enough to wait for...
@@ -25,9 +31,9 @@ Additionally I'll use `JConsole` to explore the producer JMX. This requires XFor
 In the `Control terminal` run the following two `kafka-topics` commands. The first will confirm that your `myClient.config` is in good shape and you have access to your cluster, the second will create the first test-topic.
 
 ```
-kafka-topics --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --command-config myClient.config --list
+kafka-topics --bootstrap-server $BOOTSTRAP_SERVER --command-config myClient.config --list
 
-kafka-topics --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --command-config myClient.config --create --topic producer-test
+kafka-topics --bootstrap-server $BOOTSTRAP_SERVER --command-config myClient.config --create --topic producer-test
 ```
 
 ## Establish consumer
@@ -35,7 +41,7 @@ To ensure as-expected behaviour during the test I run a `kafka-console-consumer`
 
 In your `consumer terminal` run:
 ```
-kafka-console-consumer --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --consumer.config myClient.config --group MyDemoConsumer --topic producer-test
+kafka-console-consumer --bootstrap-server $BOOTSTRAP_SERVER --consumer.config myClient.config --group MyDemoConsumer --topic producer-test
 ```
 
 ## Establish Producer logging
@@ -131,13 +137,13 @@ A side effect of the short `request.timeout.ms` failure above is an increased ri
 To demonstrate this:
 - I create a new topic `producer-test2`
 ```
-kafka-topics --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --command-config myClient.config --create --topic producer-test2
+kafka-topics --bootstrap-server $BOOTSTRAP_SERVER --command-config myClient.config --create --topic producer-test2
 ```
 - I stop (and clear) the producer in the Producer terminal
 - I stop (and clear) the consumer in the Consumer terminal
 - I restart the consumer _with the new topic_
 ```
-kafka-console-consumer --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --consumer.config myClient.config --group MyDemoConsumer --topic producer-test2
+kafka-console-consumer --bootstrap-server $BOOTSTRAP_SERVER --consumer.config myClient.config --group MyDemoConsumer --topic producer-test2
 ```
 
 
@@ -169,13 +175,13 @@ As with the duplications test, for this test it is necessary to start with a new
 
 - Create a new topic `producer-test3`
 ```
-kafka-topics --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --command-config myClient.config --create --topic producer-test3
+kafka-topics --bootstrap-server $BOOTSTRAP_SERVER --command-config myClient.config --create --topic producer-test3
 ```
 - Stop (and clear) the producer
 - Stop (and clear) the consumer
 - Restart consumer _with the new topic_
 ```
-kafka-console-consumer --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --consumer.config myClient.config --group MyDemoConsumer --topic producer-test3
+kafka-console-consumer --bootstrap-server $BOOTSTRAP_SERVER --consumer.config myClient.config --group MyDemoConsumer --topic producer-test3
 ```
 
 Change acks setting in the config file. Set  `acks = 0` in `myAddedProducer.config`
@@ -200,11 +206,11 @@ As with the duplications- and acks=0-tests, for this test it is necessary to sta
 
 
 ```
-kafka-topics --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --command-config myClient.config --create --topic producer-test4
+kafka-topics --bootstrap-server $BOOTSTRAP_SERVER --command-config myClient.config --create --topic producer-test4
 ```
 
 ```
-kafka-console-consumer --bootstrap-server [YOUR BOOTSTRAP SERVER]:9092 --consumer.config myClient.config --group MyDemoConsumer --topic producer-test4
+kafka-console-consumer --bootstrap-server $BOOTSTRAP_SERVER --consumer.config myClient.config --group MyDemoConsumer --topic producer-test4
 ```
 In `myAddedProducer.config` set:
 ```
